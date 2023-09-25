@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.StateChartMapper">
+
+	<!-- sales -->
+	<select id="firstCategorySales" resultMap="fcMapList">
+		select 
+			c.ctgr_name as categoryname , sum(od.ord_price * od.ord_amount) as sales
+		from 
+			product_tb p, ord_detail_tb od, 
+		    	(
+		    		select 
+		    			cp.ctgr_name, cc.ctgr_cd 
+		    		from 
+		    			category_tb cc, category_tb cp 
+		    		where 
+		    			cc.ctgr_prt_cd = cp.ctgr_cd
+		    	) c  
+		where 
+			p.prd_no = od.prd_no 
+		and 
+			p.ctgr_cd = c.ctgr_cd
+		group 
+			by c.ctgr_name
+		order 
+			by c.ctgr_name
+	</select>
+	
+	<resultMap type="map" id="fcMapList">
+		<result column="categoryname" property="categoryname"/>
+		<result column="sales" property="sales"/>
+	</resultMap>
+
+</mapper>

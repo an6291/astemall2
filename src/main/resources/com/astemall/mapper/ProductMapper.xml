@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.ProductMapper">
+
+	<!-- 1차 카테고리 출력 -->
+	<select id="mainCategoryList" resultType="com.astemall.domain.CategoryVO">
+		select
+			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from
+			category_tb
+		where
+			ctgr_prt_cd is null
+	</select>
+	
+	<!-- 2차 카테고리 출력 -->
+	<select id="subCategoryList" resultType="com.astemall.domain.CategoryVO">
+		select
+			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from
+			category_tb
+		where
+			ctgr_prt_cd = #{ctgr_cd}
+	</select>
+	
+	<!-- 2차 카테고리별 상품 목록 -->
+	<select id="pro_list" resultType="com.astemall.domain.ProductVO">
+  		<!-- (인덱스힌트, 인라인뷰 사용) -->
+  		<![CDATA[
+  		select 
+  			rn, prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount, prd_buy, create_date, update_date
+		from 
+			( 
+		        select /*+INDEX_DESC(product_tb pk_prd_no) */ 
+		        	rownum rn, prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount, prd_buy, create_date, update_date
+		        from 
+		        	product_tb
+		        where
+		        	ctgr_cd = #{ctgr_cd}
+		        and 
+		        	prd_buy = 'Y'
+		        and
+					
+		         	rownum <= (#{cri.pageNum} * #{cri.amount})
+		     )
+		where 
+			RN > ((#{cri.pageNum} - 1) * #{cri.amount})
+			
+		]]>	
+  	</select>
+  	
+  	<!-- 상품 개수 -->
+  	<select id="pro_count" resultType="int">
+  		select 
+  			count(*) 
+  		from 
+  			product_tb
+  		where
+        	ctgr_cd = #{ctgr_cd}
+        and 
+        	prd_buy = 'Y'  			
+  	</select>
+  	
+  	<!-- 상품 상세 -->
+  	<select id="pro_detail" resultType="com.astemall.domain.ProductVO">
+  		select
+  			prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount
+  		from
+  			product_tb
+  		where
+  			prd_no = #{prd_no}
+  	
+  	</select>
+	
+</mapper>

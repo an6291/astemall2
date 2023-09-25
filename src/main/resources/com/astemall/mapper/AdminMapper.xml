@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.AdminMapper">
+
+	<select id="login" resultType="com.astemall.domain.AdminVO">
+		select
+			ad_id, ad_pw, last_visit
+		from
+			admin_tb
+		where
+			ad_id = #{ad_id}
+	</select>
+	
+	<update id="now_visit">
+		update
+			admin_tb
+		set
+			last_visit = sysdate
+		where
+			ad_id = #{ad_id}
+	</update>
+</mapper>

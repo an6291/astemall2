@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.CartMapper">
+
+	<!-- 장바구니에 상품 추가 -->
+	<!-- 장바구니에 로그인 사용자가 상품을 추가시, 존재할 경우는 수량 변경 /  존재하지 않는 경우는 장바구니에 추가(담기) -->	
+	<insert id="cart_add">
+		merge into 
+			cart_tb
+		using 
+			dual
+		on 
+			(mb_id = #{mb_id} and prd_no = #{prd_no})
+		when matched then
+		    update
+	        set cart_amount = cart_amount + #{cart_amount}
+		when not matched then
+		    insert(cart_no, prd_no, mb_id, cart_amount)
+		    values(seq_cart_no.nextval, #{prd_no}, #{mb_id}, #{cart_amount})	
+	</insert>
+	
+	<!-- 장바구니 상품 목록 -->
+	<select id="cart_list" resultType="com.astemall.dto.CartListDTO">
+		select 
+		    rownum no, c.cart_no, p.prd_up_folder, p.prd_img, c.prd_no, p.prd_name, c.cart_amount, p.prd_price * c.cart_amount as unitprice
+		from
+		    product_tb p inner join cart_tb c
+		on
+		    p.prd_no = c.prd_no
+		where
+		    mb_id = #{mb_id}
+	</select>
+	<!-- 장바구니 총 금액 -->
+	<select id="cart_tot_price" resultType="int">
+		select 
+		    sum(p.prd_price * c.cart_amount) as cart_tot_price
+		from
+		    product_tb p inner join cart_tb c
+		on
+		    p.prd_no = c.prd_no
+		where
+		    mb_id = #{mb_id}
+	</select>
+	
+	<!-- 장바구니 상품수량 변경 -->
+	<update id="cart_amount_change">
+		update
+			cart_tb
+		set
+			cart_amount = #{cart_amount}
+		where
+			cart_no = #{cart_no}
+	</update>
+	
+	<!-- 장바구니 상품 개별삭제 -->
+	<delete id="cart_delete">
+	delete from
+		cart_tb
+	where
+		cart_no = #{cart_no}
+	</delete>
+	
+	<!-- 장바구니 상품 전체삭제 -->
+	<delete id="cart_empty">
+	delete from
+		cart_tb
+	where
+		mb_id = #{mb_id}
+	</delete>
+	
+</mapper>

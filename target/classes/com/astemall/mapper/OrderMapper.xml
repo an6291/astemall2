@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.OrderMapper">
+
+	<!-- 주문정보 -->
+	<insert id="order_save" parameterType="com.astemall.domain.OrderVO">
+		<selectKey keyProperty="ord_no" order="BEFORE" resultType="Long"> 
+			select seq_ord_no.nextval from dual
+		</selectKey>
+	
+		insert into 
+			order_tb(ord_no, mb_id, ord_rcv_name, ord_rcv_zipcode, ord_rcv_addr, ord_rcv_addr_d, ord_rcv_phone, ord_tot_price, pay_method) 
+		values
+			(#{ord_no}, #{mb_id}, #{ord_rcv_name}, #{ord_rcv_zipcode}, #{ord_rcv_addr}, #{ord_rcv_addr_d}, #{ord_rcv_phone}, #{ord_tot_price}, #{pay_method})
+	</insert>
+	
+	<insert id="order_detail_save">
+		insert into
+			ORD_DETAIL_TB(ord_no, prd_no, ord_amount, ord_price)
+		select  
+			#{ord_no}, c.prd_no, c.cart_amount, p.prd_price
+		from 
+			cart_tb c inner join product_tb p
+		on 
+			c.prd_no = p.prd_no
+	</insert>
+	
+	<insert id="payment_save">
+		insert into 
+		    payment_tb(pay_cd, ord_no, mb_id, pay_method, pay_price, pay_user, pay_bank, pay_memo)
+		values
+    		(seq_pay_cd.nextval, #{ord_no}, #{mb_id}, #{pay_method}, #{pay_price}, #{pay_user}, #{pay_bank}, #{pay_memo})
+	</insert>
+	
+</mapper>

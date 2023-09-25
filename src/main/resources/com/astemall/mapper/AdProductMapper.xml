@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.AdProductMapper">
+
+	<!-- 1차 카테고리 출력 -->
+	<select id="mainCategoryList" resultType="com.astemall.domain.CategoryVO">
+		select
+			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from
+			category_tb
+		where
+			ctgr_prt_cd is null
+	</select>
+	
+	<!-- 2차 카테고리 출력 -->
+	<select id="subCategoryList" resultType="com.astemall.domain.CategoryVO">
+		select
+			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from
+			category_tb
+		where
+			ctgr_prt_cd = #{ctgr_cd}
+	</select>
+	
+	<!-- 상품 등록 -->
+	<insert id="pro_insert">
+		insert into 
+			product_tb(prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount, prd_buy, create_date)
+		values
+			(seq_prd_no.nextval, #{ctgr_cd}, #{prd_name}, #{prd_price}, #{prd_discount}, #{prd_company}, #{prd_detail}, #{prd_up_folder}, #{prd_img}, #{prd_amount}, #{prd_buy}, sysdate)
+	</insert>
+	
+	<!-- (상품 목록, 개수) 카테고리 검색조건 -->
+	<sql id="category">
+		<if test="ctgr_cd != null"> <!-- null이 아니면, 카테고리 검색 기능 사용 -->
+			ctgr_cd = #{ctgr_cd}
+			and
+		</if>
+	</sql>
+	
+	<!-- (상품 목록, 개수) 검색어 검색조건  -->  <!-- 파라미터 타입이 "com.astemall.domain.Criteria" 인 구문에 삽입되므로, Criteria의 필드 사용 가능 -->
+  	<sql id="criteria">
+  		<trim prefix="(" suffix=") AND " prefixOverrides="OR">  <!-- 복수 조건이기 때문에 ()를 사용 -->
+  			<foreach collection="cri.typeArr" item="type"> 
+  				<trim prefix="OR">
+  					<choose>
+  						<when test="cri.type == 'N'.toString()">
+  							prd_name like '%' || #{cri.keyword} || '%'
+  						</when>
+  						<when test="cri.type == 'C'.toString()">
+  							prd_company like '%' || #{cri.keyword} || '%'
+  						</when>
+  					</choose>
+  				</trim>
+  			</foreach>
+  		</trim>
+  	</sql>
+	
+	<!-- 상품 목록 -->
+	<select id="getListWithPaging" resultType="com.astemall.domain.ProductVO">
+  		<!-- (인덱스힌트, 인라인뷰 사용) -->
+  		<![CDATA[
+  		select 
+  			rn, prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount, prd_buy, create_date, update_date
+		from 
+			( 
+		        select /*+INDEX_DESC(product_tb pk_prd_no) */ 
+		        	rownum rn, prd_no, ctgr_cd, prd_name, prd_price, prd_discount, prd_company, prd_detail, prd_up_folder, prd_img, prd_amount, prd_buy, create_date, update_date
+		        from 
+		        	product_tb
+		        where
+		]]>
+			<include refid="category"></include>
+			<include refid="criteria"></include>
+			
+		<![CDATA[
+		        	rownum <= (#{cri.pageNum} * #{cri.amount})
+		        
+		     )
+		where 
+			RN > ((#{cri.pageNum} - 1) * #{cri.amount})
+			
+		]]>	
+  	</select>
+  	
+  	<!-- 상품 개수 -->
+  	<select id="getTotalCount" resultType="int">
+  		select count(*) from product_tb
+  		where
+  			<include refid="category"></include>
+  			<include refid="criteria"></include>
+  			prd_no > 0  <!-- <include>가 동작하지 않아도 문제되지 않도록 prd_no > 0 작성 -->
+  	</select>
+  	
+  	<!-- 상품 수정 폼 -->
+  	<select id="pro_modifyForm" resultType="com.astemall.domain.ProductVO">
+  		select * from product_tb
+  		where 
+  			prd_no = #{prd_no}
+  	</select>
+  	
+  	<!-- (2차 카테고리 가지고) 1차 카테고리 출력 -->
+  	<select id="mainFSCategory" resultType="com.astemall.domain.CategoryVO">
+  		select 
+  			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from 
+			category_tb
+		where 
+			ctgr_cd = (
+	                    select ctgr_prt_cd
+	                      from category_tb
+	                     where ctgr_cd = #{ctgr_cd}
+	                  	)
+  	</select>
+  	
+  	<!-- 상품 수정 -->
+  	<update id="pro_modify">
+  		update
+  			product_tb
+  		set
+  			ctgr_cd = #{ctgr_cd}, 
+  			prd_name = #{prd_name}, 
+  			prd_price = #{prd_price}, 
+  			prd_discount = #{prd_discount}, 
+  			prd_company = #{prd_company}, 
+  			prd_detail = #{prd_detail}, 
+  			prd_up_folder = #{prd_up_folder}, 
+  			prd_img = #{prd_img}, 
+  			prd_amount = #{prd_amount}, 
+  			prd_buy = #{prd_buy}, 
+  			update_date = sysdate
+  		where
+  			prd_no = #{prd_no}
+  	</update>
+  	
+  	<!-- 선택상품 수정 -->
+  	<update id="pro_checked_modify">
+  		<foreach collection="list" item="vo" open="declare begin" separator=";" close="; end;">
+  			update
+  				product_tb
+  			set
+  				prd_price = #{vo.prd_price},
+  				prd_buy = #{vo.prd_buy}, 
+  				update_date = sysdate
+  			where
+  				prd_no = #{vo.prd_no}
+  		</foreach>
+  	</update>
+  	
+  	<!-- 상품 삭제 -->
+  	<delete id="pro_delete">
+  		delete from
+  			product_tb
+  		where
+  			prd_no = #{prd_no}
+  	</delete>
+  	
+  	<!-- 선택상품 삭제 -->
+  	<delete id="pro_checked_delete">
+  		delete from
+  			product_tb
+  		where
+  			prd_no in
+	  		<foreach collection="list" item="prd_no" open="(" separator="," close=")">
+	  			#{prd_no}
+	  		</foreach>
+  	</delete>
+  	
+  	<!-- 상품 상세 -->
+  	<select id="pro_detail" resultType="com.astemall.domain.ProductVO">
+  		select * from product_tb
+  		where 
+  			prd_no = #{prd_no}
+  	</select>
+  	<!-- 2차 카테고리명 출력 -->
+	<select id="subCategory" resultType="com.astemall.domain.CategoryVO">
+		select
+			ctgr_cd, ctgr_prt_cd, ctgr_name
+		from
+			category_tb
+		where
+			ctgr_cd = #{ctgr_cd}
+	</select>
+  	
+</mapper>

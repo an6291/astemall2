@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.MemberMapper">
+
+	<select id="idCheck" resultType="string">
+		SELECT mb_id FROM member_tb WHERE mb_id = #{mb_id}
+	</select>
+	
+	<insert id="join">
+		INSERT INTO 
+			member_tb(mb_id, mb_pw, mb_name, mb_zipcode, mb_addr, mb_addr_d, mb_phone, mb_email)
+		VALUES
+			(#{mb_id}, #{mb_pw}, #{mb_name}, #{mb_zipcode}, #{mb_addr}, #{mb_addr_d}, #{mb_phone}, #{mb_email})
+	
+	</insert>
+	
+	<select id="login" resultType="com.astemall.domain.MemberVO">
+		SELECT
+			mb_id, mb_pw, mb_name, mb_zipcode, mb_addr, mb_addr_d, mb_phone, mb_email, mb_email_acpt, mb_point, last_visit, create_date, update_date
+		FROM
+			member_tb
+		WHERE
+			mb_id = #{mb_id}
+	</select>
+	
+	<update id="now_visit">
+		update
+			member_tb
+		set
+			last_visit = sysdate
+		where
+			mb_id = #{mb_id}
+	</update>
+	
+	<update id="modify">
+		UPDATE
+			member_tb
+		SET
+			mb_name = #{mb_name}, 
+			mb_email = #{mb_email}, 
+			mb_zipcode = #{mb_zipcode}, 
+			mb_addr = #{mb_addr}, 
+			mb_addr_d = #{mb_addr_d}, 
+			mb_phone = #{mb_phone}, 
+			update_date = sysdate
+		WHERE
+			mb_id = #{mb_id}
+	</update>
+	
+	<update id="pwchange">
+		update
+			member_tb
+		set
+			mb_pw = #{new_mb_pw}
+		where
+			mb_id = #{mb_id}
+	</update>
+	
+	<update id="delete">
+		delete
+			member_tb
+		where 
+			mb_id = #{mb_id}
+	</update>
+	
+</mapper>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.astemall.mapper.AdMemberMapper">
+
+	<!-- (회원 목록, 수) 검색어 검색조건  -->
+  	<sql id="criteria">
+  		<trim prefix="(" suffix=") AND " prefixOverrides="OR">  <!-- 복수 조건이기 때문에 ()를 사용 -->
+  			<foreach collection="typeArr" item="type"> 
+  				<trim prefix="OR">
+  					<choose>
+  						<when test="type == 'I'.toString()">
+  							mb_id like '%' || #{keyword} || '%'
+  						</when>
+  						<when test="type == 'N'.toString()">
+  							mb_name like '%' || #{keyword} || '%'
+  						</when>
+  					</choose>
+  				</trim>
+  			</foreach>
+  		</trim>
+  	</sql>
+	
+	<!-- 회원 목록 -->
+	<select id="getListWithPaging" resultType="com.astemall.domain.MemberVO">
+  		<!-- (인덱스힌트, 인라인뷰 사용) -->
+  		<![CDATA[
+  		select 
+  			rn, mb_id, mb_name, mb_phone, mb_email, mb_email_acpt, create_date
+		from 
+			( 
+		        select /*+INDEX_DESC(member_tb PK_MB_ID) */ 
+		        	rownum rn, mb_id, mb_name, mb_phone, mb_email, mb_email_acpt, create_date
+		        from 
+		        	member_tb
+		        where
+		]]>
+			<include refid="criteria"></include>
+			
+		<![CDATA[
+		        	rownum <= (#{pageNum} * #{amount})
+		        
+		     )
+		where 
+			RN > ((#{pageNum} - 1) * #{amount})
+			
+		]]>	
+  	</select>
+  	
+  	<!-- 회원 수 -->
+  	<select id="getTotalCount" resultType="int">
+  		select count(*) from member_tb
+  		where
+  			<include refid="criteria"></include>
+  			mb_zipcode > 0
+  	</select>
+
+</mapper>
